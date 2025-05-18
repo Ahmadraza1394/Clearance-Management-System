@@ -3,8 +3,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "./context/AuthContext";
 import Image from "next/image";
 
-// To use the ArrowRightIcon from Heroicons, you need to install the heroicons package. Run the following command in your terminal:
-// npm install @heroicons/react
+
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
 export default function Home() {

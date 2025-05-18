@@ -12,25 +12,22 @@ const initialState = {
 // Create the context
 const AuthContext = createContext(initialState);
 
-// Mock student data to avoid circular dependency
-const mockStudents = [
-  {
-    _id: "1",
-    user_id: "user1",
-    name: "Ahmad Raza",
-    email: "ahmad@gmail.com",
-    password: "student123",
-    roll_number: "BCS-F19-M-001",
-  },
-  {
-    _id: "2",
-    user_id: "user2",
-    name: "Fatima Khan",
-    email: "fatima@gmail.com",
-    password: "student123",
-    roll_number: "BCS-F19-F-002",
-  },
-];
+// Import initialStudents from local storage to avoid circular dependency
+const getInitialStudents = () => {
+  if (typeof window !== 'undefined') {
+    const storedStudents = localStorage.getItem('students');
+    if (storedStudents) {
+      return JSON.parse(storedStudents);
+    }
+  }
+  return [];
+};
+
+// Get a student by email - always gets the latest from localStorage
+const getStudentByEmail = (email) => {
+  const students = getInitialStudents();
+  return students.find(student => student.email === email);
+};
 
 // Auth Provider component
 export const AuthProvider = ({ children }) => {
@@ -38,8 +35,7 @@ export const AuthProvider = ({ children }) => {
 
   // Function to login user
   const login = (userData) => {
-    // In a real app, this would validate against the backend
-    // For now we'll just update the state
+    // Update the state
     setAuth({
       isAuthenticated: true,
       user: userData,
@@ -47,7 +43,7 @@ export const AuthProvider = ({ children }) => {
       loading: false,
     });
 
-    // Store in localStorage (would use secure HttpOnly cookies in production)
+    // Store in localStorage
     localStorage.setItem(
       "auth",
       JSON.stringify({
@@ -73,15 +69,15 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: adminData };
     }
 
-    // For student login, check against mock student data to avoid circular dependency
-    const student = mockStudents.find((s) => s.email === email);
+    // For student login, always get the latest data from localStorage
+    const student = getStudentByEmail(email);
     if (student && student.password === password) {
       const studentData = {
         id: student._id,
         user_id: student.user_id,
         username: student.name.toLowerCase().replace(" ", "."),
         email: student.email,
-        role: "student",
+        role: student.role || "student", // Use role from student data if available
         name: student.name,
         roll_number: student.roll_number,
       };

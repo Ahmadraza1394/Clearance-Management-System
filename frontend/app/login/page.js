@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { EyeIcon } from "@heroicons/react/24/outline"; // Importing only EyeIcon
 
-// Removed EyeOffIcon import as it caused a module not found error
+
 
 export default function Login() {
   const [email, setEmail] = useState("");

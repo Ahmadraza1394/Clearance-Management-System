@@ -121,12 +121,17 @@ export default function UploadStudents() {
     }
 
     try {
-      addBulkStudents(parsedData);
-      setSuccess(
-        `Successfully added ${parsedData.length} students to the system!`
-      );
-      setParsedData([]);
-      setCsvData(null);
+      const result = addBulkStudents(parsedData);
+      
+      if (result.success) {
+        setSuccess(
+          `Successfully added ${result.added} students to the system! ${result.skipped > 0 ? `(${result.skipped} duplicate students were skipped)` : ''}`
+        );
+        setParsedData([]);
+        setCsvData(null);
+      } else {
+        setError("Failed to add students to the system");
+      }
     } catch (err) {
       setError("Failed to add students to the system");
     }

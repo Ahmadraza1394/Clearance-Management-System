@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useState, useContext } from "react";
+import { createContext, useState, useContext, useEffect } from "react";
 
 // Mock data for initial development
 const initialStudents = [
@@ -9,11 +9,12 @@ const initialStudents = [
     name: "Ahmad Raza",
     email: "ahmad@gmail.com",
     password: "student123",
-    roll_number: "BCS-F19-M-001",
+    roll_number: "21-SE-32",
+    role: "student",
     clearance_status: {
       dispensary: true,
       hostel: true,
-      due: true,
+      due: false,
       library: true,
       academic_department: true,
       alumni: true,
@@ -27,6 +28,7 @@ const initialStudents = [
     email: "fatima@gmail.com",
     password: "student123",
     roll_number: "BCS-F19-F-002",
+    role: "student",
     clearance_status: {
       dispensary: true,
       hostel: true,
@@ -44,32 +46,97 @@ const StudentContext = createContext();
 
 // Student Provider component
 export const StudentProvider = ({ children }) => {
-  const [students, setStudents] = useState(initialStudents);
-  const [loading, setLoading] = useState(false);
-  const [loggedInStudent, setLoggedInStudent] = useState(null); // State to track logged-in student
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loggedInStudent, setLoggedInStudent] = useState(null);
+
+  // Load data from localStorage on initial render
+  useEffect(() => {
+    const storedStudents = localStorage.getItem('students');
+    if (storedStudents) {
+      setStudents(JSON.parse(storedStudents));
+    } else {
+      // If no data in localStorage, use initialStudents
+      setStudents(initialStudents);
+      localStorage.setItem('students', JSON.stringify(initialStudents));
+    }
+    
+    const storedLoggedInStudent = localStorage.getItem('loggedInStudent');
+    if (storedLoggedInStudent) {
+      setLoggedInStudent(JSON.parse(storedLoggedInStudent));
+    }
+    
+    setLoading(false);
+  }, []);
+
+  // Update localStorage whenever students change
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem('students', JSON.stringify(students));
+    }
+  }, [students, loading]);
+
+  // Update localStorage when loggedInStudent changes
+  useEffect(() => {
+    if (loggedInStudent) {
+      localStorage.setItem('loggedInStudent', JSON.stringify(loggedInStudent));
+    } else {
+      localStorage.removeItem('loggedInStudent');
+    }
+  }, [loggedInStudent]);
 
   // Add a single student
   const addStudent = (student) => {
+    // Check if student with same email or roll_number already exists
+    const isDuplicate = students.some(
+      (s) => s.email === student.email || s.roll_number === student.roll_number
+    );
+
+    if (isDuplicate) {
+      return { success: false, message: "Student with this email or roll number already exists" };
+    }
+
     const newStudent = {
       ...student,
       _id: Date.now().toString(),
       password: "student123", // Default password
+      role: "student", // Default role
       clearance_date: null,
     };
     setStudents([...students, newStudent]);
-    return newStudent;
+    return { success: true, student: newStudent };
   };
 
   // Add multiple students (bulk upload)
   const addBulkStudents = (newStudents) => {
-    const processedStudents = newStudents.map((student) => ({
+    // Filter out duplicate students based on email or roll_number
+    const uniqueStudents = newStudents.filter(newStudent => {
+      return !students.some(
+        existingStudent => 
+          existingStudent.email === newStudent.email || 
+          existingStudent.roll_number === newStudent.roll_number
+      );
+    });
+
+    // Process only unique students
+    const processedStudents = uniqueStudents.map((student) => ({
       ...student,
       _id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       password: "student123", // Default password
+      role: "student", // Default role
       clearance_date: null,
     }));
-    setStudents([...students, ...processedStudents]);
-    return processedStudents;
+
+    if (processedStudents.length > 0) {
+      setStudents([...students, ...processedStudents]);
+    }
+
+    return {
+      success: true,
+      added: processedStudents.length,
+      skipped: newStudents.length - processedStudents.length,
+      students: processedStudents
+    };
   };
 
   // Update student clearance status
@@ -98,17 +165,36 @@ export const StudentProvider = ({ children }) => {
 
   // Update student password
   const updatePassword = (studentId, newPassword) => {
-    setStudents(
-      students.map((student) => {
-        if (student._id === studentId || student.user_id === studentId) {
-          return {
-            ...student,
-            password: newPassword,
-          };
-        }
-        return student;
-      })
-    );
+    // Create updated students array
+    const updatedStudents = students.map((student) => {
+      if (student._id === studentId || student.user_id === studentId || student.email === studentId) {
+        return {
+          ...student,
+          password: newPassword,
+        };
+      }
+      return student;
+    });
+    
+    // Update state
+    setStudents(updatedStudents);
+    
+    // Immediately update localStorage to ensure changes are available for login
+    localStorage.setItem('students', JSON.stringify(updatedStudents));
+    
+    // If this is the logged-in student, update their data in localStorage too
+    if (loggedInStudent && 
+        (loggedInStudent._id === studentId || 
+         loggedInStudent.user_id === studentId || 
+         loggedInStudent.email === studentId)) {
+      const updatedLoggedInStudent = {
+        ...loggedInStudent,
+        password: newPassword
+      };
+      setLoggedInStudent(updatedLoggedInStudent);
+      localStorage.setItem('loggedInStudent', JSON.stringify(updatedLoggedInStudent));
+    }
+    
     return true;
   };
 
@@ -116,7 +202,7 @@ export const StudentProvider = ({ children }) => {
   const getStudentById = (id) => {
     return students.find(
       (student) =>
-        student._id === id || student.user_id === id || student.email === id // Also match by email
+        student._id === id || student.user_id === id || student.email === id
     );
   };
 
@@ -144,10 +230,21 @@ export const StudentProvider = ({ children }) => {
   const loginAsStudent = (userId) => {
     const student = getStudentById(userId);
     if (student) {
-      setLoggedInStudent(student);
-      return student;
+      const studentWithRole = {
+        ...student,
+        role: student.role || "student" // Ensure role is set
+      };
+      setLoggedInStudent(studentWithRole);
+      return studentWithRole;
     }
     return null; // Return null if student not found
+  };
+
+  // Get student by credentials (for auth integration)
+  const getStudentByCredentials = (email, password) => {
+    return students.find(student => 
+      student.email === email && student.password === password
+    );
   };
 
   return (
@@ -163,8 +260,9 @@ export const StudentProvider = ({ children }) => {
         getStudentByEmail,
         getAllStudents,
         isFullyCleared,
-        loginAsStudent, // Expose the login function
-        loggedInStudent, // Expose the logged-in student
+        loginAsStudent,
+        loggedInStudent,
+        getStudentByCredentials,
       }}
     >
       {children}
