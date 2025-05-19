@@ -19,6 +19,14 @@ const initialStudents = [
       academic_department: true,
       alumni: true,
     },
+    documents: {
+      dispensary: [],
+      hostel: [],
+      due: [],
+      library: [],
+      academic_department: [],
+      alumni: [],
+    },
     clearance_date: new Date().toISOString(),
   },
   {
@@ -36,6 +44,14 @@ const initialStudents = [
       library: false,
       academic_department: true,
       alumni: true,
+    },
+    documents: {
+      dispensary: [],
+      hostel: [],
+      due: [],
+      library: [],
+      academic_department: [],
+      alumni: [],
     },
     clearance_date: new Date().toISOString(),
   },
@@ -102,6 +118,14 @@ export const StudentProvider = ({ children }) => {
       password: "student123", // Default password
       role: "student", // Default role
       clearance_date: null,
+      documents: {
+        dispensary: [],
+        hostel: [],
+        due: [],
+        library: [],
+        academic_department: [],
+        alumni: [],
+      },
     };
     setStudents([...students, newStudent]);
     return { success: true, student: newStudent };
@@ -125,6 +149,14 @@ export const StudentProvider = ({ children }) => {
       password: "student123", // Default password
       role: "student", // Default role
       clearance_date: null,
+      documents: {
+        dispensary: [],
+        hostel: [],
+        due: [],
+        library: [],
+        academic_department: [],
+        alumni: [],
+      },
     }));
 
     if (processedStudents.length > 0) {
@@ -247,6 +279,110 @@ export const StudentProvider = ({ children }) => {
     );
   };
 
+  // Upload document for a specific department
+  const uploadDocument = (studentId, department, document) => {
+    const updatedStudents = students.map((student) => {
+      if (student._id === studentId || student.user_id === studentId || student.email === studentId) {
+        // Create a new document object with metadata
+        const newDocument = {
+          id: Date.now().toString(),
+          url: document.url,
+          publicId: document.publicId,
+          filename: document.filename,
+          fileType: document.fileType,
+          uploadDate: new Date().toISOString(),
+        };
+
+        return {
+          ...student,
+          documents: {
+            ...student.documents,
+            [department]: [...(student.documents?.[department] || []), newDocument],
+          },
+        };
+      }
+      return student;
+    });
+
+    setStudents(updatedStudents);
+    localStorage.setItem('students', JSON.stringify(updatedStudents));
+    
+    // Update logged in student if applicable
+    if (loggedInStudent && 
+        (loggedInStudent._id === studentId || 
+         loggedInStudent.user_id === studentId || 
+         loggedInStudent.email === studentId)) {
+      const updatedStudent = updatedStudents.find(s => 
+        s._id === studentId || s.user_id === studentId || s.email === studentId
+      );
+      if (updatedStudent) {
+        setLoggedInStudent(updatedStudent);
+        localStorage.setItem('loggedInStudent', JSON.stringify(updatedStudent));
+      }
+    }
+    
+    return true;
+  };
+
+  // Get documents for a specific student and department
+  const getStudentDocuments = (studentId, department = null) => {
+    const student = getStudentById(studentId);
+    if (!student || !student.documents) return department ? [] : {};
+    
+    if (department) {
+      return student.documents[department] || [];
+    }
+    
+    return student.documents;
+  };
+
+  // Delete a document
+  const deleteDocument = (studentId, department, documentId) => {
+    try {
+      // Find the student and update their documents
+      const updatedStudents = students.map((student) => {
+        if (student._id === studentId || student.user_id === studentId || student.email === studentId) {
+          // Create a new student object with the document removed
+          return {
+            ...student,
+            documents: {
+              ...student.documents,
+              [department]: (student.documents[department] || []).filter(
+                (doc) => doc.id !== documentId
+              ),
+            },
+          };
+        }
+        return student;
+      });
+
+      // Update the state
+      setStudents(updatedStudents);
+      
+      // Important: Immediately update localStorage to persist the change
+      localStorage.setItem('students', JSON.stringify(updatedStudents));
+      
+      // Update logged in student if applicable
+      if (loggedInStudent && 
+          (loggedInStudent._id === studentId || 
+           loggedInStudent.user_id === studentId || 
+           loggedInStudent.email === studentId)) {
+        const updatedStudent = updatedStudents.find(s => 
+          s._id === studentId || s.user_id === studentId || s.email === studentId
+        );
+        if (updatedStudent) {
+          setLoggedInStudent(updatedStudent);
+          localStorage.setItem('loggedInStudent', JSON.stringify(updatedStudent));
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error in deleteDocument:', error);
+      return false;
+    }
+  };
+
   return (
     <StudentContext.Provider
       value={{
@@ -263,6 +399,9 @@ export const StudentProvider = ({ children }) => {
         loginAsStudent,
         loggedInStudent,
         getStudentByCredentials,
+        uploadDocument,
+        getStudentDocuments,
+        deleteDocument,
       }}
     >
       {children}

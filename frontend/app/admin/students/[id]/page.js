@@ -5,13 +5,14 @@ import { useAuth, logout } from "../../../context/AuthContext";
 import { useStudents } from "../../../context/StudentContext";
 import Link from "next/link";
 import Header from "@/app/components/Header";
-import { FaCheckCircle, FaTimesCircle, FaArrowLeft, FaSave, FaUser, FaIdCard } from "react-icons/fa";
+import DocumentViewer from "@/app/components/FileUpload/DocumentViewer";
+import { FaCheckCircle, FaTimesCircle, FaArrowLeft, FaSave, FaUser, FaIdCard, FaFile, FaFolderOpen } from "react-icons/fa";
 
 export default function UpdateStudentStatus({ params }) {
   const studentId = params.id;
   const router = useRouter();
-  const { auth } = useAuth();
-  const { getStudentById, updateStudentStatus } = useStudents();
+  const { auth,logout } = useAuth();
+  const { getStudentById, updateStudentStatus, getStudentDocuments } = useStudents();
 
   const [student, setStudent] = useState(null);
   const [clearanceStatus, setClearanceStatus] = useState({});
@@ -247,6 +248,23 @@ export default function UpdateStudentStatus({ params }) {
                           ) : (
                             <FaTimesCircle className="absolute bottom-2 right-2 text-red-200 opacity-30 h-12 w-12" />
                           )}
+                          
+                          {/* Document Section */}
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <h5 className="text-sm font-medium text-gray-700 flex items-center">
+                              <FaFolderOpen className="mr-2 text-blue-500" />
+                              Submitted Documents
+                            </h5>
+                            
+                            {/* Show uploaded documents */}
+                            <div className="mt-2">
+                              <DocumentViewer 
+                                documents={student?.documents?.[department] || []} 
+                                department={department}
+                                readOnly={true}
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}

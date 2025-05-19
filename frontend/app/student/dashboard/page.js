@@ -5,12 +5,14 @@ import { useAuth } from "../../context/AuthContext";
 import { useStudents } from "../../context/StudentContext";
 import Link from "next/link";
 import Header from "@/app/components/Header";
-import { FaCheckCircle, FaTimesCircle, FaFileDownload, FaLock } from "react-icons/fa";
+import FileUpload from "@/app/components/FileUpload";
+import DocumentViewer from "@/app/components/FileUpload/DocumentViewer";
+import { FaCheckCircle, FaTimesCircle, FaFileDownload, FaLock, FaFileUpload, FaFile } from "react-icons/fa";
 
 export default function StudentDashboard() {
   const router = useRouter();
   const { auth, logout } = useAuth();
-  const { getStudentById, isFullyCleared } = useStudents();
+  const { getStudentById, isFullyCleared, uploadDocument, getStudentDocuments, deleteDocument } = useStudents();
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -68,11 +70,11 @@ export default function StudentDashboard() {
       <Header title={"Student Dashboard"} auth={auth} logout={logout} />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
         
         {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-xl p-6 mb-8 text-white">
-          <div className="flex flex-col md:flex-row justify-between items-center">
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl shadow-xl p-6 mb-8 text-white">
+          <div className="flex bg-gradient-to-r from-gray-800 to-gray-900 flex-col md:flex-row justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold">Welcome, {student?.name || "Student"}!</h1>
               <p className="mt-2 text-blue-100">Track and manage your clearance process</p>
@@ -215,7 +217,7 @@ export default function StudentDashboard() {
           {/* Department Clearance Status */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
-              <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
+              <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4">
                 <h3 className="text-xl font-bold text-white">Department Clearance Status</h3>
               </div>
               <div className="p-6">
@@ -266,6 +268,38 @@ export default function StudentDashboard() {
                                       ></div>
                                     </div>
                                   </div>
+                                  
+                                  {/* Document Section */}
+                                  <div className="mt-3 pt-3 border-t border-gray-200">
+                                    <div className="flex justify-between items-center">
+                                      <h5 className="text-sm font-medium text-gray-700 flex items-center">
+                                        <FaFile className="mr-1 text-sm" />
+                                        Documents
+                                      </h5>
+                                      <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                        Max: 5MB
+                                      </span>
+                                    </div>
+                                    
+                                    {/* Show uploaded documents */}
+                                    <div className="mt-2">
+                                      <DocumentViewer 
+                                        documents={student?.documents?.[department] || []} 
+                                        department={department}
+                                        onDelete={(dept, docId) => deleteDocument(student._id, dept, docId)}
+                                      />
+                                    </div>
+                                    
+                                    {/* Upload new document - more compact */}
+                                    <div className="mt-2">
+                                      <div className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 hover:bg-gray-100 transition-colors">
+                                        <FileUpload 
+                                          department={department}
+                                          onUploadComplete={(dept, doc) => uploadDocument(student._id, dept, doc)}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -279,7 +313,7 @@ export default function StudentDashboard() {
                 <div className="mt-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                   <div className="flex">
                     <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <svg className="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                       </svg>
                     </div>
@@ -287,10 +321,10 @@ export default function StudentDashboard() {
                       <p className="text-sm text-blue-700">
                         If you have any questions about your clearance status, please contact the respective department or visit the administrative office.
                       </p>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-blue-700">
-                        Also you can contact the admin for any other queries.
+                      <p className="text-sm text-blue-700 mt-2">
+                        <span className="font-medium">Document Upload:</span> You can upload supporting documents for each department. Accepted formats include PDF, Word, Excel, and images. 
+                        <br />
+                        <span className="font-medium text-red-600">Max Size:5MB</span> 
                       </p>
                     </div>
                   </div>
@@ -303,3 +337,5 @@ export default function StudentDashboard() {
     </div>
   );
 };  
+
+  
