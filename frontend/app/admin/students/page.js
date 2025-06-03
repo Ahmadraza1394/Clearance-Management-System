@@ -6,6 +6,7 @@ import { useStudents } from "../../context/StudentContext";
 import Link from "next/link";
 import Header from "@/app/components/Header";
 import CenterNotification from "@/app/components/CenterNotification";
+import Loader from "@/app/components/Loader";
 import { FaCheckCircle, FaExclamationCircle, FaSearch, FaUserPlus, FaArrowLeft, FaTrash, FaEdit, FaBell, FaEnvelope } from "react-icons/fa";
 import apiService from "@/app/utils/api";
 
@@ -32,7 +33,7 @@ export default function StudentList() {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [studentsPerPage] = useState(15);
+  const [studentsPerPage] = useState(10);
 
   // Memoized function to fetch students data
   const fetchStudents = useCallback(async () => {
@@ -172,9 +173,11 @@ export default function StudentList() {
     
     try {
       // Send notification via API
-      await apiService.post(`/notifications/student/${studentToNotify._id}`, {
+      await apiService.post(`/notifications`, {
+        student_id: studentToNotify._id,
         title: notification.title,
-        message: notification.message
+        message: notification.message,
+        type: 'message'
       });
       
       // Reset form and close modal
@@ -232,45 +235,60 @@ export default function StudentList() {
     if (totalPages <= 1) return null;
     
     return (
-      <div className="flex justify-center mt-6">
-        <nav className="inline-flex items-center rounded-lg overflow-hidden shadow-lg" aria-label="Pagination">
-          <button
-            onClick={() => handlePageClick(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            className="px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span className="sr-only">Previous</span>
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          </button>
-          
-          {pageNumbers.map(number => (
-            <button
-              key={number}
-              onClick={() => handlePageClick(number)}
-              className={`px-4 py-2 text-sm font-medium ${
-                currentPage === number
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-blue-600 hover:bg-blue-50'
-              } transition-colors duration-200`}
-            >
-              {number}
-            </button>
-          ))}
-          
-          <button
-            onClick={() => handlePageClick(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            className="px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span className="sr-only">Next</span>
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </nav>
-      </div>
+   <div className="flex justify-center mt-6 px-2">
+  <nav
+    className="flex flex-wrap justify-center items-center gap-1 sm:gap-2 rounded-lg shadow-lg bg-white p-2"
+    aria-label="Pagination"
+  >
+    {/* Previous Button */}
+    <button
+      onClick={() => handlePageClick(Math.max(1, currentPage - 1))}
+      disabled={currentPage === 1}
+      className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-blue-600 bg-white hover:bg-blue-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+    >
+      <span className="sr-only">Previous</span>
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <path
+          fillRule="evenodd"
+          d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </button>
+
+    {/* Page Numbers */}
+    {pageNumbers.map((number) => (
+      <button
+        key={number}
+        onClick={() => handlePageClick(number)}
+        className={`w-9 h-9 sm:w-10 sm:h-10 text-sm font-medium rounded-md flex items-center justify-center transition-colors duration-200 ${
+          currentPage === number
+            ? 'bg-blue-600 text-white'
+            : 'bg-white text-blue-600 hover:bg-blue-50'
+        }`}
+      >
+        {number}
+      </button>
+    ))}
+
+    {/* Next Button */}
+    <button
+      onClick={() => handlePageClick(Math.min(totalPages, currentPage + 1))}
+      disabled={currentPage === totalPages}
+      className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-blue-600 bg-white hover:bg-blue-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+    >
+      <span className="sr-only">Next</span>
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <path
+          fillRule="evenodd"
+          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </button>
+  </nav>
+</div>
+
     );
   });
   
@@ -370,14 +388,7 @@ export default function StudentList() {
   }, [paginatedStudents, router, handleDeleteClick, handleNotifyClick]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex justify-center items-center bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 border-opacity-75"></div>
-          <p className="mt-4 text-blue-600 font-medium">Loading students...</p>
-        </div>
-      </div>
-    );
+    return <Loader message="Loading Student Data..." />;
   }
 
   return (
@@ -439,48 +450,34 @@ export default function StudentList() {
           </div>
 
           {/* Students Table */}
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+          <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Student
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Roll Number
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Clearance Date
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Actions
-                    </th>
+                    {["Student", "Roll Number", "Status", "Clearance Date", "Actions"].map((header, index) => (
+                      <th
+                        key={index}
+                        scope="col"
+                        className={`px-6 py-4 text-left text-sm font-semibold text-gray-600 ${
+                          index === 4 ? 'text-right' : ''
+                        }`}
+                      >
+                        {header}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                   {tableContent}
                 </tbody>
               </table>
             </div>
+            {tableContent.length === 0 && (
+              <div className="text-center py-10">
+                <p className="text-gray-500">No students found</p>
+              </div>
+            )}
           </div>
           
           {/* Pagination Controls */}

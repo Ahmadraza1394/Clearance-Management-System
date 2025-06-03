@@ -1,23 +1,25 @@
-"use client";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "./context/AuthContext";
-import { StudentProvider } from "./context/StudentContext";
-import { NotificationProvider } from "./context/NotificationContext";
+import ClientProviders from "./components/ClientProviders";
 
 const inter = Inter({ subsets: ["latin"] });
 
+export const metadata = {
+  title: "Clearance Management System",
+  description: "A comprehensive system for managing student clearance processes",
+  icons: {
+    icon: '/logo.jpg',
+    apple: '/logo.jpg',
+  },
+};
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <AuthProvider>
-          <StudentProvider>
-            <NotificationProvider>
-              {children}
-            </NotificationProvider>
-          </StudentProvider>
-        </AuthProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
+        <ClientProviders>
+          {children}
+        </ClientProviders>
       </body>
     </html>
   );

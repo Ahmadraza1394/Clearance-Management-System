@@ -7,6 +7,8 @@ import Link from "next/link";
 import Header from "@/app/components/Header";
 import { FaEye, FaEyeSlash, FaLock, FaArrowLeft, FaSignOutAlt } from "react-icons/fa";
 import apiService from "@/app/utils/api";
+import Loader from "@/app/components/Loader";
+import ChatBotButton from "@/app/components/ChatBotButton";
 
 export default function ChangePassword() {
   const router = useRouter();
@@ -181,14 +183,7 @@ export default function ChangePassword() {
 
   // Memoize the loading component to prevent unnecessary re-renders
   const loadingComponent = useMemo(() => (
-    <div className="min-h-screen flex justify-center items-center bg-gradient-to-r from-blue-50 to-indigo-50">
-      <div className="flex flex-col items-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 border-opacity-75"></div>
-        <p className="mt-4 text-blue-600 font-medium">
-          Loading...
-        </p>
-      </div>
-    </div>
+    <Loader message="Loading Change Password Page..." />
   ), []);
 
   if (loading) {
@@ -352,6 +347,9 @@ export default function ChangePassword() {
           </Link>
         </div>
       </div>
+      
+      {/* Chatbot Button */}
+      <ChatBotButton />
     </div>
   );
 }

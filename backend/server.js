@@ -11,7 +11,21 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://clearance-management-system-frontend.vercel.app',
+    'https://clearance-management-system-frontend-bo6ddxkug.vercel.app',
+    'https://clearance-management-system-frontend-p20d4r00f.vercel.app',
+    'https://clearance-management-system-fronten.vercel.app',
+    'https://clearance-management-system-frontend-*.vercel.app',
+    // Allow all subdomains of vercel.app that start with clearance-management-system-frontend
+    /^https:\/\/clearance-management-system-frontend-.*\.vercel\.app$/
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
@@ -20,6 +34,7 @@ app.use('/api/students', require('./routes/students'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/admins', require('./routes/admins'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/chatbot', require('./routes/chatbotRoutes'));
 
 // Root route
 app.get('/', (req, res) => {

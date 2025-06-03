@@ -10,6 +10,7 @@ import CenterNotification from "@/app/components/CenterNotification";
 import { FaCheckCircle, FaTimesCircle, FaArrowLeft, FaSave, FaUser, FaIdCard, FaFile, FaFolderOpen } from "react-icons/fa";
 import apiService from "@/app/utils/api";
 import { use } from 'react';
+import Loader from "@/app/components/Loader";
 
 export default function UpdateStudentStatus({ params }) {
   // Unwrap params using React.use() to avoid the warning
@@ -113,12 +114,7 @@ export default function UpdateStudentStatus({ params }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gradient-to-r from-gray-50 to-gray-100">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
-          <p className="mt-4 text-gray-600 font-medium">Loading student data...</p>
-        </div>
-      </div>
+      <Loader message="Loading Student Data..." />
     );
   }
 

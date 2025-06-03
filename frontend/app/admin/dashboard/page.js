@@ -7,6 +7,7 @@ import Link from "next/link";
 import Header from "@/app/components/Header";
 import { FaChartLine, FaClipboardCheck, FaFileUpload, FaHome, FaRegBell, FaRegCalendarAlt, FaSignInAlt, FaUserPlus, FaUsers, FaIdCard, FaCheckCircle, FaUserCog } from "react-icons/fa";
 import apiService from "@/app/utils/api";
+import Loader from "@/app/components/Loader";
 
 // Memoized component for activity icons to prevent unnecessary re-renders
 const ActivityIcon = memo(function ActivityIcon({ iconName }) {
@@ -105,7 +106,7 @@ export default function AdminDashboard() {
   // Memoized activity list content to prevent unnecessary re-renders
   const activityListContent = useMemo(() => {
     if (recentActivities.length === 0) {
-      return <p className="text-center text-gray-500 text-sm">No recent activities</p>;
+      return <p className="text-center text-gray-100 text-sm">No recent activities</p>;
     }
     
     return recentActivities.map((activity, index) => (
@@ -114,7 +115,7 @@ export default function AdminDashboard() {
           <ActivityIcon iconName={activity.icon} />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-800">{activity.message}</p>
+          <p className="text-sm font-medium text-gray-300">{activity.message}</p>
           <p className="text-xs text-gray-500">{activity.time}</p>
         </div>
       </div>
@@ -140,12 +141,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gray-100">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-indigo-600 border-opacity-75"></div>
-          <p className="mt-4 text-indigo-600 font-medium">Loading your dashboard...</p>
-        </div>
-      </div>
+      <Loader message="Loading Dashboard Data..." />
     );
   }
 
@@ -162,165 +158,162 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gray-100">
       <Header title="Admin Dashboard" auth={auth} logout={logout} />
 
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800 mb-1">
+      <div className="max-w-7xl mx-auto py-8  px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-r from-indigo-800 to-blue-900 py-16 rounded-lg shadow-lg p-8 mb-10">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-6 md:mb-0">
+              <h1 className="text-3xl font-extrabold text-white mb-2">
                 Welcome, {auth.user?.name || 'Administrator'}
               </h1>
-              <p className="text-gray-600 text-sm">
+              <p className="text-indigo-100 text-lg">
                 Manage student clearances and system administration
               </p>
             </div>
-            <div className="flex items-center space-x-3">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
-                <FaRegCalendarAlt className="mr-1" /> {new Date().toLocaleDateString()}
+            <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-white text-indigo-900 shadow-sm">
+                <FaRegCalendarAlt className="mr-2" /> {new Date().toLocaleDateString()}
               </span>
-              <Link href="/admin/students" className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition-colors">
-                <FaUsers className="mr-1" /> Manage Students
+              <Link href="/admin/students" className="inline-flex items-center px-6 py-3 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-900 hover:bg-indigo-200 transition-colors duration-300 ease-in-out shadow-sm">
+                <FaUsers className="mr-2" /> Manage Students
               </Link>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-300">
+            <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Students</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{stats.totalStudents}</h3>
+                  <p className="text-sm font-medium text-indigo-100">Total Students</p>
+                  <h3 className="text-4xl font-bold text-white mt-2">{stats.totalStudents}</h3>
                 </div>
-                <div className="p-3 bg-indigo-100 rounded-lg">
-                  <FaUsers className="h-6 w-6 text-indigo-600" />
+                <div className="p-3 bg-white bg-opacity-30 rounded-lg">
+                  <FaUsers className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <div className="mt-4 text-xs text-gray-500">
-                <span className="text-green-500 font-medium">+{Math.floor(stats.totalStudents * 0.1)}</span> from last month
+              <div className="mt-4 text-sm text-indigo-100">
+                <span className="text-green-300 font-medium">↑ {Math.floor(stats.totalStudents * 0.1)}</span> from last month
               </div>
             </div>
-            <div className="bg-indigo-600 h-1"></div>
+            <div className="h-1 bg-indigo-400"></div>
           </div>
           
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-5">
+          <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-300">
+            <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Cleared Students</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{stats.clearedStudents}</h3>
+                  <p className="text-sm font-medium text-teal-100">Cleared Students</p>
+                  <h3 className="text-4xl font-bold text-white mt-2">{stats.clearedStudents}</h3>
                 </div>
-                <div className="p-3 bg-teal-100 rounded-lg">
-                  <FaClipboardCheck className="h-6 w-6 text-teal-600" />
+                <div className="p-3 bg-white bg-opacity-30 rounded-lg">
+                  <FaClipboardCheck className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <div className="mt-4 text-xs text-gray-500">
-                <span className="text-teal-500 font-medium">{Math.round((stats.clearedStudents / stats.totalStudents) * 100)}%</span> clearance rate
+              <div className="mt-4 text-sm text-teal-100">
+                <span className="text-green-300 font-medium">{Math.round((stats.clearedStudents / stats.totalStudents) * 100)}%</span> clearance rate
               </div>
             </div>
-            <div className="bg-teal-600 h-1"></div>
+            <div className="h-1 bg-teal-400"></div>
           </div>
           
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-5">
+          <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-300">
+            <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Pending Clearances</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{stats.pendingStudents}</h3>
+                  <p className="text-sm font-medium text-amber-100">Pending Clearances</p>
+                  <h3 className="text-4xl font-bold text-white mt-2">{stats.pendingStudents}</h3>
                 </div>
-                <div className="p-3 bg-amber-100 rounded-lg">
-                  <FaChartLine className="h-6 w-6 text-amber-600" />
+                <div className="p-3 bg-white bg-opacity-30 rounded-lg">
+                  <FaChartLine className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <div className="mt-4 text-xs text-gray-500">
-                <span className="text-amber-500 font-medium">{Math.round((stats.pendingStudents / stats.totalStudents) * 100)}%</span> of total students
+              <div className="mt-4 text-sm text-amber-100">
+                <span className="text-red-300 font-medium">{Math.round((stats.pendingStudents / stats.totalStudents) * 100)}%</span> of total students
               </div>
             </div>
-            <div className="bg-amber-600 h-1"></div>
+            <div className="h-1 bg-amber-400"></div>
           </div>
           
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-5">
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-300">
+            <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">System Status</p>
-                  <h3 className="text-xl font-bold text-gray-800 mt-1">Active</h3>
+                  <p className="text-sm font-medium text-purple-100">System Status</p>
+                  <h3 className="text-2xl font-bold text-white mt-2">Active</h3>
                 </div>
-                <div className="p-3 bg-indigo-100 rounded-lg">
-                  <div className="h-6 w-6 text-indigo-600 flex items-center justify-center">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                <div className="p-3 bg-white bg-opacity-30 rounded-lg">
+                  <div className="h-8 w-8 text-white flex items-center justify-center">
+                    <span className="relative flex h-4 w-4">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
                     </span>
                   </div>
                 </div>
               </div>
-              <div className="mt-4 text-xs text-gray-500">
+              <div className="mt-1 text-sm text-purple-100">
                 Last updated: {stats.lastUpdate}
               </div>
             </div>
-            <div className="bg-indigo-600 h-1"></div>
+            <div className="h-1 bg-purple-400"></div>
           </div>
         </div>
+        <h2 className="text-4xl font-extrabold text- mb-8 mt-16">
+  <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 animate-gradient-x">
+    Administrative Actions
+  </span>
+</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-8 mb-12">
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            <Link href="/admin/students" className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all flex flex-col items-center">
-              <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center mb-4 shadow-md">
-                <FaUsers className="w-5 h-5 text-white" />
-              </div>
-              <h2 className="text-base font-semibold text-gray-800">Manage Students</h2>
-              <p className="mt-2 text-xs text-gray-500 text-center">View and update clearance status</p>
-            </Link>
-            <Link href="/admin/add-student" className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all flex flex-col items-center">
-              <div className="w-12 h-12 bg-teal-600 rounded-full flex items-center justify-center mb-4 shadow-md">
-                <FaUserPlus className="w-5 h-5 text-white" />
-              </div>
-              <h2 className="text-base font-semibold text-gray-800">Add Student</h2>
-              <p className="mt-2 text-xs text-gray-500 text-center">Add a new student to the system</p>
-            </Link>
-            <Link href="/admin/upload-students" className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all flex flex-col items-center">
-              <div className="w-12 h-12 bg-amber-600 rounded-full flex items-center justify-center mb-4 shadow-md">
-                <FaFileUpload className="w-5 h-5 text-white" />
-              </div>
-              <h2 className="text-base font-semibold text-gray-800">Bulk Upload</h2>
-              <p className="mt-2 text-xs text-gray-500 text-center">Upload multiple students via CSV</p>
-            </Link>
-            <Link href="/admin/verify-certificate" className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all flex flex-col items-center">
-              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mb-4 shadow-md">
-                <FaCheckCircle className="w-5 h-5 text-white" />
-              </div>
-              <h2 className="text-base font-semibold text-gray-800">Verify Certificate</h2>
-              <p className="mt-2 text-xs text-gray-500 text-center">Verify student clearance certificates</p>
-            </Link>
-            <Link href="/admin/manage-admins" className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all flex flex-col items-center">
-              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mb-4 shadow-md">
-                <FaUserCog className="w-5 h-5 text-white" />
-              </div>
-              <h2 className="text-base font-semibold text-gray-800">Manage Admins</h2>
-              <p className="mt-2 text-xs text-gray-500 text-center">Add or remove system administrators</p>
-            </Link>
+          
+          <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[
+              { href: "/admin/students", icon: FaUsers, title: "Manage Students", desc: "View and update clearance status", color: "from-blue-500 to-blue-600" },
+              { href: "/admin/add-student", icon: FaUserPlus, title: "Add Student", desc: "Add a new student to the system", color: "from-teal-400 to-teal-500" },
+              { href: "/admin/upload-students", icon: FaFileUpload, title: "Bulk Upload", desc: "Upload multiple students via CSV", color: "from-orange-400 to-orange-500" },
+              { href: "/admin/verify-certificate", icon: FaCheckCircle, title: "Verify Certificate", desc: "Verify student clearance certificates", color: "from-green-400 to-green-500" },
+              { href: "/admin/manage-admins", icon: FaUserCog, title: "Manage Admins", desc: "Add or remove system administrators", color: "from-purple-400 to-purple-500" },
+            ].map((item, index) => (
+              <Link 
+                key={index} 
+                href={item.href} 
+                className={`bg-gradient-to-br ${item.color} rounded-2xl shadow-md p-6 hover:shadow-xl transition-all duration-300 flex flex-col items-start text-white group transform hover:scale-105 hover:-translate-y-1`}
+              >
+                <div className="w-14 h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center mb-4 group-hover:bg-opacity-30 transition-all duration-300">
+                  <item.icon className="w-7 h-7 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2">{item.title}</h2>
+                <p className="text-sm text-white opacity-80">{item.desc}</p>
+                <div className="mt-4 self-end">
+                  <span className="text-xs font-semibold bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                    Explore
+                  </span>
+                </div>
+              </Link>
+            ))}
           </div>
-
-          <div className="bg-white rounded-lg shadow-md flex flex-col h-full">
-            <div className="bg-indigo-600 text-white px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <FaClipboardCheck className="w-5 h-5" /> Recent Activity
+          {/* <div className="bg-gradient-to-br from-gray-900 to-indigo-900 rounded-3xl shadow-2xl flex flex-col h-96 overflow-hidden transition-all duration-300 hover:shadow-indigo-500/30">
+            <div className="px-6 py-5 flex items-center justify-between bg-black bg-opacity-30 border-b border-indigo-500/30">
+              <h3 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-300 flex items-center gap-3">
+                <FaClipboardCheck className="w-7 h-7 text-indigo-400" />
+                Recent Activity
               </h3>
               <button
                 onClick={() => addActivity('update', 'Dashboard refreshed')}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold transition text-white"
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-sm font-semibold transition-all duration-300 text-white transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900"
                 title="Refresh Activities"
               >
-                <FaChartLine className="w-4 h-4" /> Refresh
+                <FaChartLine className="w-4 h-4 animate-pulse" />
+                <span>Refresh</span>
               </button>
             </div>
-            <div className="flex-1 p-4 overflow-y-auto max-h-52 min-h-[100px]">
-              <div className="space-y-2">
+            <div className="flex-1 p-5 overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-600 scrollbar-track-gray-800 bg-gradient-to-b from-gray-800/50 to-gray-900/50">
+              <div className="space-y-4 relative">
                 {activityListContent}
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-20 pointer-events-none"></div>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

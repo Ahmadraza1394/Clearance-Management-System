@@ -91,14 +91,14 @@ export default function VerifyCertificate() {
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-grow">
                   <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-1">
-                    Enter Student ID, Roll Number, or Email
+                    Enter Student Certificate ID or Email
                   </label>
                   <input
                     type="text"
                     id="studentId"
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value)}
-                    placeholder="e.g., 21-SE-32 or student@uet.edu.pk"
+                    placeholder="e.g., yx34k5h3li2 or 21-se-32@studentsuettaxila.edu.pk"
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>

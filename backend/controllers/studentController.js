@@ -269,7 +269,15 @@ exports.updatePassword = async (req, res) => {
 exports.addDocumentMetadata = async (req, res) => {
   try {
     const { id, department } = req.params;
-    const documentData = req.body;
+    const { document } = req.body; // Extract document from request body
+    
+    if (!document) {
+      return res.status(400).json({ message: 'Document data is required' });
+    }
+    
+    console.log('Received document data:', document);
+    console.log('For student ID:', id);
+    console.log('Department:', department);
     
     // Find student
     let student = await Student.findOne({
@@ -290,18 +298,29 @@ exports.addDocumentMetadata = async (req, res) => {
       return res.status(400).json({ message: 'Invalid department' });
     }
     
+    // Initialize documents object if it doesn't exist
+    if (!student.documents) {
+      student.documents = {};
+    }
+    
     // Add document to the department
     if (!student.documents[department]) {
       student.documents[department] = [];
     }
     
-    student.documents[department].push(documentData);
+    // Ensure document has an id
+    const documentToAdd = {
+      ...document,
+      id: document.id || document.public_id || `doc-${Date.now()}`
+    };
+    
+    student.documents[department].push(documentToAdd);
     await student.save();
     
     res.json(student.documents[department]);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Error adding document metadata:', err);
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
@@ -310,6 +329,10 @@ exports.deleteDocument = async (req, res) => {
   try {
     const { id, department, documentId } = req.params;
     
+    console.log('Deleting document:', documentId);
+    console.log('From department:', department);
+    console.log('For student ID:', id);
+    
     // Find student
     let student = await Student.findOne({
       $or: [
@@ -329,18 +352,39 @@ exports.deleteDocument = async (req, res) => {
       return res.status(400).json({ message: 'Invalid department' });
     }
     
-    // Remove document from the department
-    if (student.documents[department]) {
-      student.documents[department] = student.documents[department].filter(
-        doc => doc.id !== documentId
-      );
-      await student.save();
+    // Initialize documents object if it doesn't exist
+    if (!student.documents) {
+      student.documents = {};
+      return res.json({ message: 'No documents found to delete' });
     }
     
-    res.json({ message: 'Document deleted successfully' });
+    // Remove document from the department
+    if (student.documents[department]) {
+      const originalLength = student.documents[department].length;
+      student.documents[department] = student.documents[department].filter(
+        doc => (doc.id !== documentId && doc.public_id !== documentId)
+      );
+      
+      // Check if any document was actually removed
+      if (originalLength === student.documents[department].length) {
+        console.log('No document found with ID:', documentId);
+        return res.status(404).json({ message: 'Document not found' });
+      }
+      
+      await student.save();
+      console.log('Document deleted successfully');
+    } else {
+      console.log('Department has no documents:', department);
+      return res.status(404).json({ message: 'No documents found in this department' });
+    }
+    
+    res.json({ 
+      message: 'Document deleted successfully',
+      remainingDocuments: student.documents[department] 
+    });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Error deleting document:', err);
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 

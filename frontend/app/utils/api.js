@@ -6,8 +6,8 @@
  * Optimized with caching to improve performance
  */
 
-// API base URL - update this with your backend URL
-const API_URL = 'http://localhost:5000/api';
+// API base URL - uses environment variables with fallback
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 // Cache for storing API responses
 const cache = new Map();

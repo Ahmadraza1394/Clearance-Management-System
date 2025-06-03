@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { useStudents } from "../../context/StudentContext";
@@ -9,6 +9,8 @@ import Header from "@/app/components/Header";
 import FileUpload from "@/app/components/FileUpload";
 import DocumentViewer from "@/app/components/FileUpload/DocumentViewer";
 import NotificationPanel from "@/app/components/NotificationPanel";
+import Loader from "@/app/components/Loader";
+import ChatBotButton from "@/app/components/ChatBotButton";
 import apiService from "@/app/utils/api";
 import {
   FaCheckCircle,
@@ -103,14 +105,7 @@ export default function StudentDashboard() {
 
   // Memoize the loading component to prevent unnecessary re-renders
   const loadingComponent = useMemo(() => (
-    <div className="min-h-screen flex justify-center items-center bg-gradient-to-r from-blue-50 to-indigo-50">
-      <div className="flex flex-col items-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 border-opacity-75"></div>
-        <p className="mt-4 text-blue-600 font-medium">
-          Loading your dashboard...
-        </p>
-      </div>
-    </div>
+    <Loader message="Loading Your Dashboard..." />
   ), []);
 
   // Define helper functions outside the component body or return statement
@@ -146,7 +141,7 @@ export default function StudentDashboard() {
   const { allCleared, totalDepartments, clearedDepartments, completionPercentage } = dashboardStats;
   
   if (loading) {
-    return loadingComponent;
+    return <Loader message="Loading your dashboard..." />;
   }
 
   return (
@@ -154,7 +149,7 @@ export default function StudentDashboard() {
       {/* Navigation Header */}
       <div className="relative">
         <Header title={"Student Dashboard"} auth={auth} logout={logout} />
-        <div className="absolute top-4 right-20">
+        <div className="absolute top-20 right-2 md:top-4 md:right-20">
           <NotificationPanel />
         </div>
       </div>
@@ -375,7 +370,6 @@ export default function StudentDashboard() {
                     student.clearance_status &&
                     Object.entries(student.clearance_status).map(
                       ([department, status]) => {
-                        // Fixed progress percentage for consistency
                         const progressPercentage = status ? 100 : 50;
 
                         return (
@@ -422,7 +416,6 @@ export default function StudentDashboard() {
                                       ></div>
                                     </div>
                                   </div>
-
                                   {/* Document Section */}
                                   <div className="mt-3 pt-3 border-t border-gray-200">
                                     <div className="flex justify-between items-center">
@@ -436,51 +429,59 @@ export default function StudentDashboard() {
                                     </div>
 
                                     {/* Show uploaded documents */}
-                                    <div className="mt-2">
+                                    <div className="mt-2 max-h-40 overflow-y-auto">
                                       <DocumentViewer
-                                        documents={
-                                          student?.documents?.[department] || []
-                                        }
+                                        documents={student?.documents?.[department] || []}
                                         department={department}
+                                        readOnly={false}
                                         onDelete={async (dept, docId) => {
                                           try {
-                                            // Try to delete document via API
                                             await apiService.delete(`/students/${student._id}/documents/${dept}/${docId}`);
-                                            console.log('Document deleted via backend API');
-                                            
-                                            // Refresh student data after deletion
-                                            const updatedData = await apiService.get(`/students/${student._id}`);
-                                            setStudent(updatedData);
+                                            const freshData = await apiService.get(`/students/${studentId}`);
+                                            setStudent(freshData);
+                                            localStorage.setItem(`student_${studentId}`, JSON.stringify({
+                                              data: freshData,
+                                              timestamp: Date.now()
+                                            }));
                                           } catch (error) {
-                                            console.error('Error deleting document via API:', error);
-                                            
-                                            // Fallback to local storage if API fails
-                                            deleteDocument(student._id, dept, docId);
-                                            console.log('Document deleted from local storage (fallback)');
+                                            console.error('Error deleting document:', error);
+                                            // Fallback to local update if API fails
+                                            setStudent(prevStudent => ({
+                                              ...prevStudent,
+                                              documents: {
+                                                ...prevStudent.documents,
+                                                [dept]: (prevStudent.documents[dept] || []).filter(doc => doc.id !== docId)
+                                              }
+                                            }));
                                           }
                                         }}
                                       />
                                     </div>
 
-                                    {/* Upload new document - more compact */}
+                                    {/* Upload new document */}
                                     <div className="mt-2">
                                       <div className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 hover:bg-gray-100 transition-colors">
                                         <FileUpload
                                           department={department}
                                           onUploadComplete={async (dept, doc) => {
                                             try {
-                                              // Try to upload document via API
                                               await apiService.put(`/students/${student._id}/documents/${dept}`, { document: doc });
-                                              console.log('Document uploaded via backend API');
-                                              
-                                              // Refresh student data after upload
-                                              fetchStudentData();
+                                              const freshData = await apiService.get(`/students/${studentId}`);
+                                              setStudent(freshData);
+                                              localStorage.setItem(`student_${studentId}`, JSON.stringify({
+                                                data: freshData,
+                                                timestamp: Date.now()
+                                              }));
                                             } catch (error) {
-                                              console.error('Error uploading document via API:', error);
-                                              
-                                              // Fallback to local storage if API fails
-                                              uploadDocument(student._id, dept, doc);
-                                              console.log('Document uploaded to local storage (fallback)');
+                                              console.error('Error uploading document:', error);
+                                              // Fallback to local update if API fails
+                                              setStudent(prevStudent => ({
+                                                ...prevStudent,
+                                                documents: {
+                                                  ...prevStudent.documents,
+                                                  [dept]: [...(prevStudent.documents[dept] || []), doc]
+                                                }
+                                              }));
                                             }
                                           }}
                                         />
@@ -501,7 +502,7 @@ export default function StudentDashboard() {
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <svg
-                        className="h-5 w-5 text-red-500"
+                        className="h-5 w-5 text-blue-500"
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 20 20"
                         fill="currentColor"
@@ -515,9 +516,7 @@ export default function StudentDashboard() {
                     </div>
                     <div className="ml-3">
                       <p className="text-sm text-blue-700">
-                        If you have any questions about your clearance status,
-                        please contact the respective department or visit the
-                        administrative office.
+                        If you have any questions about your clearance status or need assistance, please use the Chatbot for help.
                       </p>
                       <p className="text-sm text-blue-700 mt-2">
                         <span className="font-medium">Document Upload:</span>{" "}
@@ -525,7 +524,7 @@ export default function StudentDashboard() {
                         Accepted formats include PDF, Word, Excel, and images.
                         <br />
                         <span className="font-medium text-red-600">
-                          Max Size:5MB
+                          Max Size: 5MB
                         </span>
                       </p>
                     </div>
@@ -536,6 +535,9 @@ export default function StudentDashboard() {
           </div>
         </div>
       </div>
+      
+      {/* Chatbot Button */}
+      <ChatBotButton />
     </div>
   );
 }

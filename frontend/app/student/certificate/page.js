@@ -7,6 +7,8 @@ import Link from "next/link";
 import Header from "@/app/components/Header";
 import { FaDownload, FaArrowLeft } from "react-icons/fa";
 import Image from "next/image";
+import Loader from "@/app/components/Loader";
+import ChatBotButton from "@/app/components/ChatBotButton";
 
 export default function Certificate() {
   const router = useRouter();
@@ -97,12 +99,7 @@ export default function Certificate() {
 
   // Memoize the loading component to prevent unnecessary re-renders
   const loadingComponent = useMemo(() => (
-    <div className="min-h-screen flex justify-center items-center bg-gradient-to-r from-blue-50 to-indigo-50">
-      <div className="flex flex-col items-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 border-opacity-75"></div>
-        <p className="mt-4 text-blue-600 font-medium">Preparing your certificate...</p>
-      </div>
-    </div>
+    <Loader message="Preparing Certificate..." />
   ), []);
   
   if (loading) {
@@ -223,6 +220,9 @@ export default function Certificate() {
           `}</style>
         </div>
       </div>
+      
+      {/* Chatbot Button */}
+      <ChatBotButton />
     </div>
   );
 }

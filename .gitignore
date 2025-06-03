@@ -42,3 +42,22 @@ coverage/
 
 # Vercel
 .vercel
+
+# Large files and archives
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.mp4
+*.mov
+*.avi
+*.iso
+*.dmg
+*.pdf
+*.psd
+*.ai
+*.sketch
+
+# Specific large files in the project
+Clearance Management System.zip

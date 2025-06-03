@@ -32,9 +32,20 @@ const FileUpload = ({ department, onUploadComplete, disabled = false }) => {
       // Upload to Cloudinary
       const uploadResult = await uploadToCloudinary(file, `clearance_docs/${department}`);
       
-      // Call the callback with the result
+      // Prepare document object with all necessary properties
+      const completeDocument = {
+        id: uploadResult.public_id || `doc-${Date.now()}`,
+        url: uploadResult.secure_url,
+        name: file.name,
+        fileType: file.type,
+        publicId: uploadResult.public_id,
+        uploaded_at: new Date().toISOString(),
+        ...uploadResult
+      };
+      
+      // Call the callback with the complete document object
       if (onUploadComplete) {
-        onUploadComplete(department, uploadResult);
+        onUploadComplete(department, completeDocument);
       }
       
       setUploadSuccess(true);

@@ -38,60 +38,71 @@ const DocumentViewer = ({ documents = [], department = '', onDelete, readOnly = 
     if (window.confirm('Are you sure you want to delete this document?')) {
       setIsDeleting(true);
       try {
-        // Use the publicId directly if available in the document object
-        let publicId;
+        // Skip Cloudinary deletion if we're in a deployed environment without Cloudinary config
+        // or if the document doesn't have a valid URL
+        const isCloudinaryUrl = document.url && document.url.includes('cloudinary.com');
         
-        if (document.publicId) {
-          // If document has a publicId property, use it directly
-          publicId = document.publicId;
-        } else {
-          // Extract the public ID from the Cloudinary URL
-          // Format: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/public_id.ext
-          const urlParts = document.url.split('/');
-          // Get the filename with extension
-          const filenameWithExt = urlParts[urlParts.length - 1];
-          // Remove the extension
-          const filename = filenameWithExt.split('.')[0];
-          
-          // Determine the folder path if any
-          const uploadIndex = urlParts.indexOf('upload');
-          let folderPath = '';
-          
-          if (uploadIndex !== -1 && uploadIndex + 2 < urlParts.length - 1) {
-            // Collect all path segments between 'upload' and the filename
-            const folderSegments = urlParts.slice(uploadIndex + 2, urlParts.length - 1);
-            folderPath = folderSegments.join('/') + '/';
+        if (isCloudinaryUrl) {
+          try {
+            // Use the publicId directly if available in the document object
+            let publicId;
+            
+            if (document.publicId) {
+              // If document has a publicId property, use it directly
+              publicId = document.publicId;
+            } else {
+              // Extract the public ID from the Cloudinary URL
+              // Format: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/public_id.ext
+              const urlParts = document.url.split('/');
+              // Get the filename with extension
+              const filenameWithExt = urlParts[urlParts.length - 1];
+              // Remove the extension
+              const filename = filenameWithExt.split('.')[0];
+              
+              // Determine the folder path if any
+              const uploadIndex = urlParts.indexOf('upload');
+              let folderPath = '';
+              
+              if (uploadIndex !== -1 && uploadIndex + 2 < urlParts.length - 1) {
+                // Collect all path segments between 'upload' and the filename
+                const folderSegments = urlParts.slice(uploadIndex + 2, urlParts.length - 1);
+                folderPath = folderSegments.join('/') + '/';
+              }
+              
+              // Combine folder path and filename to get the complete public ID
+              publicId = folderPath + filename;
+            }
+            
+            console.log('Attempting to delete Cloudinary file with public ID:', publicId);
+            
+            // Call the delete API
+            const response = await fetch('/api/cloudinary/delete', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ publicId }),
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+              console.log('Successfully deleted file from Cloudinary');
+            } else {
+              console.log('Cloudinary deletion skipped or failed, continuing with local deletion');
+            }
+          } catch (cloudinaryError) {
+            console.log('Cloudinary deletion error, continuing with local deletion:', cloudinaryError);
           }
-          
-          // Combine folder path and filename to get the complete public ID
-          publicId = folderPath + filename;
-        }
-        
-        console.log('Deleting Cloudinary file with public ID:', publicId);
-        
-        // Call the delete API
-        const response = await fetch('/api/cloudinary/delete', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ publicId }),
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-          console.log('Successfully deleted file from Cloudinary');
-          // Call the onDelete callback with the document ID
-          onDelete(department, document.id);
         } else {
-          console.error('Failed to delete file from Cloudinary:', result.error || 'Unknown error');
-          // Still remove from local storage even if Cloudinary deletion fails
-          // This ensures the UI is updated even if there's an issue with Cloudinary
-          onDelete(department, document.id);
+          console.log('Not a Cloudinary URL or missing URL, skipping Cloudinary deletion');
         }
+        
+        // Always remove from local storage regardless of Cloudinary deletion result
+        // This ensures the UI is updated even if there's an issue with Cloudinary
+        onDelete(department, document.id);
       } catch (error) {
-        console.error('Error deleting document:', error);
+        console.error('Error in delete process:', error);
         // Still remove from local storage even if there's an exception
         onDelete(department, document.id);
       } finally {
@@ -128,65 +139,84 @@ const DocumentViewer = ({ documents = [], department = '', onDelete, readOnly = 
     return new Date(date).toLocaleDateString();
   };
 
+  const safeDocuments = documents.map((document, index) => {
+    return {
+      id: document.id || `doc-${index}`,
+      url: document.url || '',
+      name: document.name || `Document ${index + 1}`,
+      uploaded_at: document.uploaded_at || new Date().toISOString(),
+      ...document
+    };
+  });
+
   return (
-    <div className="space-y-2">
-      {documents.length === 0 ? (
-        <div className="text-center py-2 bg-gray-50 rounded-md border border-gray-200">
-          <FaFile className="mx-auto text-gray-400 text-sm mb-1" />
-          <p className="text-xs text-gray-500">No documents uploaded</p>
-        </div>
-      ) : (
-        <div className="space-y-1">
-          {documents.map((doc) => (
-            <div 
-              key={doc.id} 
-              className="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+    <div>
+      {safeDocuments.length > 0 ? (
+        <div className="space-y-2">
+          {safeDocuments.map((document, index) => (
+            <div
+              key={document.id || index}
+              className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden"
             >
-              <div className="flex items-center space-x-2">
-                {getFileIcon(doc.fileType)}
-                <div>
-                  <h4 className="text-xs font-medium text-gray-900 truncate max-w-[120px] sm:max-w-[150px] md:max-w-[200px]">
-                    {doc.name || 'Document'}
-                  </h4>
-                  <p className="text-xs text-gray-500">
-                    {formatDate(doc.uploaded_at)}
-                  </p>
+              <div className="flex items-center justify-between p-2 border-b border-gray-100">
+                <div className="flex items-center space-x-2">
+                  {getFileIcon(getFileType(document.url))}
+                  <div>
+                    <p className="text-xs font-medium text-gray-700 truncate">
+                      {document.name}
+                    </p>
+                    {document.uploaded_at && (
+                      <p className="text-xs text-gray-500">
+                        {formatDate(document.uploaded_at)}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex space-x-1">
-                <button
-                  onClick={() => handleView(doc.url)}
-                  className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
-                  title="View Document"
-                >
-                  <FaEye className="text-xs" />
-                </button>
-                
-                <button
-                  onClick={() => handleDownload(doc.url, doc.name)}
-                  className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors"
-                  title="Download Document"
-                >
-                  <FaDownload className="text-xs" />
-                </button>
-                
-                {onDelete && (
+
+                <div className="flex space-x-1">
+                  {/* Always show view button */}
                   <button
-                    onClick={() => handleDelete(doc)}
-                    disabled={isDeleting}
-                    className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Delete Document"
+                    type="button"
+                    onClick={() => document.url ? handleView(document.url) : alert('Document URL not available')}
+                    className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                    title="View Document"
                   >
-                    <FaTrash className="text-xs" />
+                    <FaEye className="text-xs" />
                   </button>
-                )}
+
+                  {/* Always show download button */}
+                  <button
+                    type="button"
+                    onClick={() => document.url ? handleDownload(document.url, document.name) : alert('Document URL not available')}
+                    className="p-1 text-green-600 hover:text-green-800 transition-colors"
+                    title="Download Document"
+                  >
+                    <FaDownload className="text-xs" />
+                  </button>
+
+                  {/* Always show delete button if not in read-only mode */}
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(document)}
+                      disabled={isDeleting}
+                      className={`p-1 ${isDeleting ? 'text-gray-400' : 'text-red-600 hover:text-red-800'} transition-colors`}
+                      title="Delete Document"
+                    >
+                      <FaTrash className="text-xs" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
         </div>
+      ) : (
+        <div className="text-center py-3 bg-gray-50 border border-dashed border-gray-300 rounded-md">
+          <p className="text-xs text-gray-500">No documents uploaded yet</p>
+        </div>
       )}
-      
+
       {/* Preview Modal */}
       {isPreviewOpen && (
         <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4">
