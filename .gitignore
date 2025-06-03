@@ -49,6 +49,11 @@ coverage/
 *.7z
 *.tar
 *.gz
+
+# Specific large files
+Clearance Management System.zip
+Clearance Management System V1.zip
+"Clearance Managment System V2(chatbot added).zip"
 *.mp4
 *.mov
 *.avi
